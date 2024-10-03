@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Add basic styling for the chat interface */
+        #chat-box {
+            width: 50%;
+            margin: 20px auto;
+            padding: 10px;
+            border: 1px solid #ccc;
+        }
+        .chat-message {
+            margin: 10px 0;
+        }
+        .user-message {
+            text-align: right;
+        }
+        .bot-message {
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div class="flex flex-col justify-center items-center min-h-screen bg-gray-100">
+        <div class="text-center mb-6">
+            <h1 class="text-3xl font-bold text-green-800">Chatbot</h1>
+            <h2 class="text-xl text-green-600 mt-2">chatbot developed and designed by <b>LOKI</b> (You know WHO)</h2>
+        </div>
+        <div id="chat-box" class="w-full max-w-2xl p-6 bg-white rounded-lg shadow-lg flex flex-col">
+            <div id="chat-log" class="mb-4 h-96 overflow-y-auto space-y-2 flex-grow">
+                <!-- Messages will be appended here -->
+            </div>
+            <div class="flex mt-auto">
+                <input type="text" id="chat-input" placeholder="Type your message..." class="flex-grow p-2 border rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <button onclick="sendMessage()" class="bg-blue-500 text-white px-4 py-2 rounded-r-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">Send</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function sendMessage() {
+            const inputElement = document.getElementById('chat-input');
+            const message = inputElement.value.trim();
+            if (message === '') return;
+            
+            inputElement.value = '';
+        
+            // Display the user's message
+            appendMessage('You', message, 'bg-blue-100', 'justify-end');
+        
+            // Send the message to the bot via AJAX
+            fetch(`/get_response/?message=${encodeURIComponent(message)}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Display the bot's response
+                    appendMessage('Bot', data.response, 'bg-green-100', 'justify-start');
+                });
+        }
+        
+        function appendMessage(sender, message, bgColor, alignment) {
+            const chatLog = document.getElementById('chat-log');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `flex ${alignment} mb-2`;
+            const innerDiv = document.createElement('div');
+            innerDiv.className = `max-w-[70%] ${bgColor} rounded-lg px-3 py-2`;
+            
+            if (sender === 'Bot') {
+                const typingElement = document.createElement('p');
+                typingElement.className = 'text-sm';
+                typingElement.innerHTML = `<strong>${sender}:</strong> `;
+                innerDiv.appendChild(typingElement);
+                messageDiv.appendChild(innerDiv);
+                chatLog.appendChild(messageDiv);
+                
+                let i = 0;
+                const typingEffect = setInterval(() => {
+                    if (i < message.length) {
+                        typingElement.innerHTML += message.charAt(i);
+                        i++;
+                        chatLog.scrollTop = chatLog.scrollHeight;
+                    } else {
+                        clearInterval(typingEffect);
+                    }
+                }, 20); // Adjust the speed of typing here (in milliseconds)
+            } else {
+                innerDiv.innerHTML = `<p class="text-sm"><strong>${sender}:</strong> ${message}</p>`;
+                messageDiv.appendChild(innerDiv);
+                chatLog.appendChild(messageDiv);
+            }
+            
+            chatLog.scrollTop = chatLog.scrollHeight;
+        }
+    
+        // Add event listener for Enter key press
+        document.addEventListener('DOMContentLoaded', function() {
+            const inputElement = document.getElementById('chat-input');
+            inputElement.addEventListener('keydown', function(event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    sendMessage();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
